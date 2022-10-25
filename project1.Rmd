@@ -1,0 +1,29 @@
+---
+title: "pstat296"
+author: "AO XU"
+date: "2022-10-25"
+output: html_document
+---
+```{r}
+install.packages("GeneCycle")
+install.packages("qpcR")
+install.packages("ggfortify")
+```
+
+
+```{r,echo=FALSE, result = 'hide',fig.show='hide',message=FALSE}
+setwd("/Users/xuao/Documents/PSTAT296A/pstat296")
+library(tsdl)
+library(forecast)
+library(MASS)
+library(GeneCycle)
+library(qpcR)
+library(ggfortify)
+library(tidyverse)
+library(readxl)
+library(ggplot2)
+library(lubridate)
+library(reshape2)
+library(kableExtra)
+```
+
