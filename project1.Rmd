@@ -5,9 +5,13 @@ date: "2022-10-25"
 output: html_document
 ---
 ```{r}
-install.packages("GeneCycle")
-install.packages("qpcR")
-install.packages("ggfortify")
+#install.packages("GeneCycle")
+#install.packages("qpcR")
+#install.packages("ggfortify")
+#install.packages("readxl")
+#install.packages("lubridate")
+#install.packages("reshape2")
+#install.packages("kableExtra")
 ```
 
 
@@ -17,7 +21,6 @@ library(tsdl)
 library(forecast)
 library(MASS)
 library(GeneCycle)
-library(qpcR)
 library(ggfortify)
 library(tidyverse)
 library(readxl)
@@ -27,3 +30,35 @@ library(reshape2)
 library(kableExtra)
 ```
 
+
+```{r}
+rm(list = ls())
+```
+
+# Import SBBI Raw Data for Capital Markets (2022_10_21)
+```{r}
+TR26_21 <- read_excel("PM.xlsx", sheet =  "Price Data")
+colnames(TR26_21) <- c("Observed Month", "Large Cap TR", "LT Govt TR 20 YR","IT Govt TR 5 YR","LT Corp TR 20 YR","T-Bill TR 30 DAY","US CPI/ INFLATION","LT Govt Yield 20 YEAR","IT Govt Yield 5 YEAR")
+TR26_21 <- TR26_21 %>%
+  filter(!row_number() %in% c(1:5)) %>%
+  janitor::clean_names()
+TR26_21 <- as.data.frame(sapply(TR26_21, as.numeric))
+TR26_21 <- TR26_21 %>%
+  mutate(observed_month = as.Date(observed_month,origin = "1899-12-30")) 
+TR26_21
+```
+# Create Monthly Index Table from the Raw Data 
+```{r}
+MIndex26_21 <- TR26_21
+MIndex26_21<-MIndex26_21[,-c(1)]
+MIndex26_21[1,] <- (1+MIndex26_21[1,]) *1000
+for(i in 2:nrow(MIndex26_21)) {      
+  MIndex26_21[i, ] <- (1+MIndex26_21[i, ]) * MIndex26_21[i-1, ]
+}
+MIndex26_21 <- cbind(observed_month=TR26_21$observed_month,MIndex26_21)
+MIndex26_21 <- MIndex26_21 %>%
+  add_row(observed_month = as.Date("1925-12-01"))
+MIndex26_21[is.na(MIndex26_21)] <- 1000
+MIndex26_21<-MIndex26_21[c(1153,1:1152),]
+rownames(MIndex26_21)<- 1:nrow(MIndex26_21)
+```
