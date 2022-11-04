@@ -14,8 +14,35 @@ data <- read.csv("data111.csv")
 data
 ```
 ```{r}
-train <- data[1:1000,1,3]
-test <- data[1001:1236,1,3]
-train
+train <- data[3:1200,6]
+test <- data[1201:1236,6]
 ```
+```{r}
+mydata <- ts(train, start=c(1920,1),frequency=12)
+plot(mydata)
+```
+```{r}
+tsdata <- ts(mydata, frequency = 12) 
+plot.ts(tsdata)
+```
+
+
+
+
+```{r}
+plot(ddata$trend)
+
+plot(ddata$seasonal)
+
+plot(ddata$random)
+```
+
+
+```{r}
+plot(AirPassengers)
+
+abline(reg=lm(AirPassengers~time(AirPassengers)))
+```
+
+
 
