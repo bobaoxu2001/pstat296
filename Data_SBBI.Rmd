@@ -1,0 +1,52 @@
+---
+title: "296Data_SBBI"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# SBBI Raw Data for Capital Markets (2022_10_21)
+```{r,echo=FALSE, result = 'hide',fig.show='hide',message=FALSE}
+setwd("/Users/zexing/Desktop/296Data")
+library(tsdl)
+library(forecast)
+library(MASS)
+library(GeneCycle)
+library(qpcR)
+library(ggfortify)
+library(tidyverse)
+library(readxl)
+library(ggplot2)
+library(lubridate)
+library(reshape2)
+library(kableExtra)
+```
+
+```{r}
+rm(list = ls())
+```
+
+# Import SBBI Raw Data for Capital Markets (2022_10_21)
+```{r}
+TR26_21 <- read_excel("SBBI Data for Capital Markets (2022_10_21).xlsx", sheet =  "Processed")
+colnames(TR26_21) <- c("Observed Month", "Large Cap TR", "LT Govt TR 20 YR","IT Govt TR 5 YR","LT Corp TR 20 YR","T-Bill TR 30 DAY","US CPI/ INFLATION","LT Govt Yield 20 YEAR","IT Govt Yield 5 YEAR")
+TR26_21 <- TR26_21 %>%
+  filter(!row_number() %in% c(1:5)) %>%
+  janitor::clean_names()
+TR26_21 <- as.data.frame(sapply(TR26_21, as.numeric))
+TR26_21 <- TR26_21 %>%
+  mutate(observed_month = as.Date(observed_month,origin = "1899-12-30")) 
+```
+
+
+
+
+
+
+
+
+
+
+
