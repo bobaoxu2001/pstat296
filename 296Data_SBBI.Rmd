@@ -21,6 +21,7 @@ library(tidyverse)
 library(astsa)
 library(MASS) 
 library(ggplot2) 
+library(readxl)
 library(ggfortify) 
 library(forecast) 
 library(GeneCycle) 
@@ -35,7 +36,7 @@ rm(list = ls())
 
 # Import SBBI Raw Data for Capital Markets (2022_10_21)
 ```{r}
-#TR26_21 <- read_excel("/Users/xuao/Documents/PSTAT296A/pstat296/SBBI Data for Capital Markets (2022_10_21).xlsx", sheet =  "Processed")
+TR26_21 <- read_excel("/Users/xuao/Documents/PSTAT296A/pstat296/SBBI Data for Capital Markets (2022_10_21).xlsx", sheet="Processed")
 colnames(TR26_21) <- c("Observed Month", "Large Cap TR", "LT Govt TR 20 YR","IT Govt TR 5 YR","LT Corp TR 20 YR","T-Bill TR 30 DAY","US CPI/ INFLATION","LT Govt Yield 20 YEAR","IT Govt Yield 5 YEAR")
 TR26_21 <- TR26_21 %>%
   filter(!row_number() %in% c(1:5)) %>%
@@ -59,7 +60,7 @@ summary(Govt_20_Yield$yield_percentage)
 plot(Govt_20_Yield$yield_percentage,type="l")
 ```
 ```{r}
-train <- Govt_20_Yield$yield_percentage[700:1140]
+train <- Govt_20_Yield$yield_percentage[600:1140]
 test <- Govt_20_Yield$yield_percentage[1141:1152]
 #train
 #test
@@ -126,10 +127,10 @@ abline(h=mean(tsdata_12_1), col = "blue")
 ```
 
 ```{r}
-# Plot it:
-#par(mfrow=c(1, 1))
-#ts.plot(y.12, main="De-seasonlized Time Series",ylab=expression(nabla[12]~Y[t]))
-#abline(h=mean(y.12), lty=2)
+#Plot it:
+par(mfrow=c(1, 1))
+ts.plot(y.12, main="De-seasonlized Time Series",ylab=expression(nabla[12]~Y[t]))
+abline(h=mean(y.12), lty=2)
 ```
 
 ```{r}
