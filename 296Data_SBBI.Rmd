@@ -60,10 +60,10 @@ summary(Govt_20_Yield$yield_percentage)
 plot(Govt_20_Yield$yield_percentage,type="l")
 ```
 ```{r}
-train <- Govt_20_Yield$yield_percentage[600:1140]
+train <- Govt_20_Yield$yield_percentage[700:1140]
 test <- Govt_20_Yield$yield_percentage[1141:1152]
 #train
-#test
+test
 ```
 
 
@@ -80,11 +80,10 @@ xlab="date")
 # Box-Cox transformation:
 t <- 1:length(tsdata)
 bcTransform <- boxcox(tsdata ~ t, plotit=TRUE)
+lambda <- bcTransform$x[which.max(bcTransform$y)]
+tsdata.bc = (1/lambda)*(tsdata^lambda-1)
 ```
 ```{r}
-lambda <- bcTransform$x[which.max(bcTransform$y)]
-lambda
-tsdata.bc = (1/lambda)*(tsdata^lambda-1)
 # Plot and compare the two:
 par(mfrow=c(1, 2))
 ts.plot(tsdata, main = "Original data",ylab = expression(X[t]))
@@ -129,19 +128,19 @@ abline(h=mean(tsdata_12_1), col = "blue")
 ```{r}
 #Plot it:
 par(mfrow=c(1, 1))
-ts.plot(y.12, main="De-seasonlized Time Series",ylab=expression(nabla[12]~Y[t]))
-abline(h=mean(y.12), lty=2)
+ts.plot(tsdata_12_1_1, main="De-seasonlized Time Series",ylab=expression(nabla[12]~Y[t]))
+abline(h=mean(tsdata_12_1_1), lty=2)
 ```
 
 ```{r}
 # Compare the ACF and PACF of tsdata, tsdata_12, and tsdata_12_1 par(mfrow=c(2,3))
 par(mfrow=c(2,3))
-acf(tsdata, lag.max = 60, main = expression(U[t]))
-acf(tsdata_12, lag.max = 60, main = expression(nabla[12]~~U[t]))
-acf(tsdata_12_1, lag.max = 60, main = expression(nabla[1]~nabla[12]~~U[t])) 
-pacf(tsdata, lag.max = 60, main = "")
-pacf(tsdata_12, lag.max = 60, main = "")
-pacf(tsdata_12_1, lag.max = 60, main = "")
+acf(tsdata, lag.max = 40, main = expression(U[t]))
+acf(tsdata_12, lag.max = 40, main = expression(nabla[12]~~U[t]))
+acf(tsdata_12_1, lag.max = 40, main = expression(nabla[1]~nabla[12]~~U[t])) 
+pacf(tsdata, lag.max = 40, main = "")
+pacf(tsdata_12, lag.max = 40, main = "")
+pacf(tsdata_12_1, lag.max = 40, main = "")
 ```
 For Sarima Model,
 
@@ -166,12 +165,18 @@ for (i in 1:nrow(df)) {
 df[which.min(df$AICc), ]
 ```
 ```{r}
+# Decide the proper p,d,q, P,D,Q from the acf and pacf plots
+acf(tsdata_12_1, lag.max = 60) 
+pacf(tsdata_12_1, lag.max = 60)
+```
+
+```{r}
 # Calculate the AICc of possible models
-a <- AICc(arima(tsdata.bc, order = c(0,1,0),
+a <- AICc(arima(tsdata.bc, order = c(1,0,0),
 seasonal = list(order = c(0,1,1), period = 12), method = "ML"))
-b<- AICc(arima(tsdata.bc, order = c(0,1,1),
+b<- AICc(arima(tsdata.bc, order = c(0,0,1),
 seasonal = list(order = c(0,1,1), period = 12), method = "ML"))
-c<- AICc(arima(tsdata.bc, order = c(0,1,3),
+c<- AICc(arima(tsdata.bc, order = c(0,0,3),
 seasonal = list(order = c(0,1,1), period = 12), method = "ML"))
 d<- AICc(arima(tsdata.bc, order = c(1,1,0),
 seasonal = list(order = c(0,1,1), period = 12), method = "ML"))
@@ -284,8 +289,8 @@ ar(res1,aic=TRUE,order.max=NULL, mehod = c("yule-walker"))
 ```{r}
 # Predict 30 future observations and plot
 par(mfrow=c(1, 1))
-mypred <- sarima.for(train, n.ahead = 30, p=2, d=1, q=0, P=, D=1, Q=1, S=12)
-points(1141:1152, test, col="yellow")
+mypred <- sarima.for(train, n.ahead = 12, p=2, d=1, q=0, P=, D=1, Q=1, S=12)
+points(441:452, test, col= 'blue')
 ```
 
 ```{r}
