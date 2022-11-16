@@ -113,12 +113,14 @@ qqline(tsdata.bc, col = "red")
 ```
 ```{r}
 #y1 <- ts(as.ts(train),frequency = 12) 
+decomp1 <- decompose(tsdata)
+plot(decomp1)
 decomp <- decompose(tsdata.bc)
 plot(decomp)
 ```
 From the comparisons, we could find that Box-Cox transformation makes it more normal
 Since the Box-Cox plot does not contain neither has 0 nor 1 in the confidence interval for $\lambda$, we choose
-$\lambda \approx$ 0.424 that maximizes the log-likelihood.
+$\lambda \approx$ 0.6262626 that maximizes the log-likelihood.
 
 ```{r}
 # Deseasonlize:
@@ -142,12 +144,12 @@ abline(h=mean(tsdata.bc.12.1), lty=2)
 ### Model Identification
 
 ```{r}
-library(forecast)
-auto.arima(tsdata.bc.12.1,ic = c("aicc"),seasonal = T,stepwise = F,parallel = T)
+#library(forecast)
+#auto.arima(tsdata.bc.12.1,ic = c("aicc"),seasonal = T,stepwise = F,parallel = T)
 ```
 
 ```{r}
-# Compare the ACF and PACF of tsdata, tsdata.12, and tsdata.1.12 
+# Compare the ACF and PACF of tsdata.12.1
 par(mfrow=c(2,3))
 #acf(train, lag.max = 60, main = expression(U[t]))
 #acf(tsdata.12, lag.max = 60, main = expression(nabla[12]~~U[t])) 
@@ -156,7 +158,8 @@ acf(tsdata.bc.12.1, lag.max = 60, main = expression(nabla[1]~nabla[12]~~U[t]))
 #pacf(tsdata.12, lag.max = 60, main = "")
 pacf(tsdata.bc.12.1, lag.max = 60, main = "")
 ```
-
+q  = 2, Q = 1 or 3
+p = 2, P = 0
 ```{r}
 # Calculate the AICc of possible models
 a1 <- AICc(arima(tsdata.bc, order = c(0,1,0),
@@ -273,7 +276,7 @@ AICc_value <- rbind(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,b1,b2,b4,b5,b6,b9,b10
 #AICc_value
 AICc_value[which.min(AICc_value), ]
 m1 <- 
-AICc_value2 <- rbind(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,b1,b2,b4,b5,b6,b8,b9,b10,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12) 
+AICc_value2 <- rbind(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,b1,b2,b4,b5,b6,b9,b10,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12) 
 AICc_value2[which.min(AICc_value2), ]
 ```
 
@@ -285,6 +288,7 @@ So one option is to use SARIMA $(2,1,0)*(0,1,1)_{12}$, and another one is to use
 ```{r}
 arima(tsdata.bc, order = c(2,1,0), seasonal = list(order = c(0,1,1), period = 12), method = "ML")
 ```
+Set the coefficeint ar1 = 0 and then test. 
 Only parameter for ar2 is significant. 
 ```{r}
 polyroot(c(1, 0.0283))
@@ -323,8 +327,8 @@ qqnorm(res1,main = "", xlab = "")
 qqline(res1, col = "blue")
 # Plot the ACF and PACF of the residual
 par(mfrow=c(1,2))
-acf(res1,lag.max=120, main = "") 
-pacf(res1,lag.max=120, main = "")
+acf(res1,lag.max=240, main = "") 
+pacf(res1,lag.max=240, main = "")
 ```
 The histogram looks normal and center at zero. 
 
