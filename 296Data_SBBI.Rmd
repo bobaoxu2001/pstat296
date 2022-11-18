@@ -544,6 +544,7 @@ points(pred.tr$pred,col = "red", pch = 1)
 ```{r}
 # Forecast with test dataset
 plot.ts(data, xlim = c(2010,2025), ylim = c(0,7))
+lines(U.tr, col = "blue", lty = "dashed") 
 lines(L.tr, col = "blue", lty = "dashed") 
 points(pred.tr$pred,col = "red", pch = 1) 
 points(c_test,col = "slategrey", pch = 20) 
