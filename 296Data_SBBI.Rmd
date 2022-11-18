@@ -62,26 +62,28 @@ summary(Govt_20_Yield$yield_percentage)
 plot(Govt_20_Yield$yield_percentage,type="l",)
 ```
 ```{r}
-# Since there is a big difference between the time before index 709 (1985.01) and after that
+# Since there is a big difference between the time before index 769 (1990.01) and after that
 # So we choose to research in the data after index 709
 # Divide it into train and test for nearly 90% and 10%
-train <- Govt_20_Yield$yield_percentage[709:1149]
+train <- Govt_20_Yield$yield_percentage[769:1149]
 test <- Govt_20_Yield$yield_percentage[1153:1161]
-#train set contains data points from 1985.01 to 2018.12, 441 points totally
-#test set contains data points from 2022.1 and 2022.9, 12 points totally
+#train set contains data points from 1990.01 to 2021.12, 381 points totally
+#test set contains data points from 2022.1 and 2022.9, 9 points totally
 ```
 
 
 ```{r}
-par(mfrow=c(2, 1))
-tsdata <- ts(train, frequency = 12, start = c(1985,1,1)) 
+par(mfrow=c(3, 1))
+data <- ts(Govt_20_Yield$yield_percentage[769:1161], frequency = 12, start = c(1990,1,1))
+c_train <- ts(train, frequency = 12, start = c(1990,1,1)) 
 c_test <-ts(test,frequency = 12,start = c(2022,1))
-ts.plot(tsdata)
+ts.plot(data)
+ts.plot(c_train)
 ts.plot(c_test)
 ```
 
 ```{r}
-hist(tsdata, main="Histogram",
+hist(c_train, main="Histogram",
 xlab="date")
 ```
 ```{r}
@@ -91,31 +93,28 @@ To make the data stationary (variance/seasonality/trend),
 ,we use the Box-Cox transformation firstly
 ```{r}
 # Box-Cox transformation:
-t <- 1:length(tsdata)
-bcTransform <- boxcox(tsdata ~ t, plotit=TRUE)
+t <- 1:length(c_train)
+bcTransform <- boxcox(c_train ~ t, plotit=TRUE)
 lambda <- bcTransform$x[which.max(bcTransform$y)]
-tsdata.bc = (1/lambda)*(tsdata^lambda-1)
+c_train.bc = (1/lambda)*(c_train^lambda-1)
 lambda
-plot(tsdata.bc)
+plot(c_train.bc)
 ```
 
 ```{r}
 # Plot and compare the two:
 par(mfrow=c(2,3))
-plot.ts(tsdata,xlab = "", main = "")
-hist(tsdata, col = "light blue", xlab = "", main = "") 
-qqnorm(tsdata, main = "", xlab = "")
-qqline(tsdata, col = "red")
-plot.ts(tsdata.bc,xlab = "", main = "")
-hist(tsdata.bc, col = "light blue", xlab = "", main = "")
-qqnorm(tsdata.bc, main = "", xlab = "")
-qqline(tsdata.bc, col = "red")
+plot.ts(c_train,xlab = "", main = "")
+hist(c_train, col = "light blue", xlab = "", main = "") 
+qqnorm(c_train, main = "", xlab = "")
+qqline(c_train, col = "red")
+plot.ts(c_train.bc,xlab = "", main = "")
+hist(c_train.bc, col = "light blue", xlab = "", main = "")
+qqnorm(c_train.bc, main = "", xlab = "")
+qqline(c_train.bc, col = "red")
 ```
 ```{r}
-#y1 <- ts(as.ts(train),frequency = 12) 
-#decomp1 <- decompose(tsdata)
-#plot(decomp1)
-decomp <- decompose(tsdata.bc)
+decomp <- decompose(c_train.bc)
 plot(decomp)
 ```
 From the comparisons, we could find that Box-Cox transformation makes it more normal
@@ -124,157 +123,179 @@ $\lambda \approx$ 0.6262626 that maximizes the log-likelihood.
 
 ```{r}
 # Deseasonlize:
-tsdata.bc.12 <- diff(tsdata.bc, 12)
-tsdata.bc.12.1 <- diff(tsdata.bc.12, 1)
-tsdata.bc.12.1.1 <- diff(tsdata.bc.12.1, 1)
-var(tsdata.bc)
-var(tsdata.bc.12);
-var(tsdata.bc.12.1); 
-var(tsdata.bc.12.1.1)
+c_train.bc.12 <- diff(c_train.bc, 12)
+c_train.bc.12.1 <- diff(c_train.bc.12, 1)
+c_train.bc.12.1.1 <- diff(c_train.bc.12.1, 1)
+var(c_train.bc)
+var(c_train.bc.12);
+var(c_train.bc.12.1); 
+var(c_train.bc.12.1.1)
 ```
 ```{r}
-hist(tsdata.bc.12.1, col = "light blue", xlab = "", main = "") 
+hist(c_train.bc.12.1, col = "light blue", xlab = "", main = "") 
 ```
 
 
 ```{r}
 # Plot it for De-seasonlized Time Series :
 par(mfrow=c(1, 1))
-ts.plot(tsdata.bc.12.1, main="De-seasonlized Time Series",
+ts.plot(c_train.bc.12.1, main="De-seasonlized Time Series",
 ylab=expression(nabla[1]~nabla[12]~Y[t]))
-abline(h=mean(tsdata.bc.12.1), lty=2)
+abline(h=mean(c_train.bc.12.1), lty=2)
 ```
 ### Model Identification
 
 ```{r}
+acf(c_train.bc.12.1, lag.max=120, main="ACF")
+pacf(c_train.bc.12.1, lag.max=120, main="ACF")
+```
+ACF outside confidence intervals: Lags 1, may be 3
+PACF outside confidence intervals: Lags 1, 2, 3, 4
+It seems like a MA model.
+
+```{r}
 library(forecast)
-auto.arima(tsdata.bc.12.1,ic = c("aicc"),seasonal = T,stepwise = F,parallel = T)
-```
-```{r}
-
+auto.arima(c_train.bc.12.1,ic = c("aicc"),seasonal = T,stepwise = F)
 ```
 
 ```{r}
-# Compare the ACF and PACF of tsdata.12.1
+arima(c_train.bc.12.1,order=c(0,0,2), seasonal = list(order = c(2,0,0), period = 12), method="ML")
+```
+```{r}
+AICc(arima(c_train.bc.12.1, order=c(0,0,2), seasonal = list(order = c(2,0,0), period = 12), method="ML")); 
+```
+```{r}
+arima(c_train.bc.12.1, order=c(0,0,2), seasonal = list(order = c(2,0,0), period = 12), fixed=c(0,NA,NA, NA, NA), method="ML")
+```
+
+```{r}
+AICc(arima(c_train.bc.12.1, order=c(0,0,2), seasonal = list(order = c(2,0,0), period = 12), fixed = c(0, NA,NA,NA,NA), method="ML"))
+```
+
+```{r}
+# Compare the ACF and PACF of c_train.12.1
 par(mfrow=c(2,3))
 #acf(train, lag.max = 60, main = expression(U[t]))
-#acf(tsdata.12, lag.max = 60, main = expression(nabla[12]~~U[t])) 
-acf(tsdata.bc.12.1, lag.max = 60, main = expression(nabla[1]~nabla[12]~~U[t])) 
+#acf(c_train.12, lag.max = 60, main = expression(nabla[12]~~U[t])) 
+acf(c_train.bc.12.1, lag.max = 60, main = expression(nabla[1]~nabla[12]~~U[t])) 
 #pacf(train, lag.max = 60, main = "")
-#pacf(tsdata.12, lag.max = 60, main = "")
-pacf(tsdata.bc.12.1, lag.max = 60, main = "")
+#pacf(c_train.12, lag.max = 60, main = "")
+pacf(c_train.bc.12.1, lag.max = 60, main = "")
 ```
 q  = 2, Q = 1 or 3
 p = 2, P = 0
 ```{r}
 # Calculate the AICc of possible models
-a1 <- AICc(arima(tsdata.bc, order = c(0,1,0),
+a1 <- AICc(arima(c_train.bc, order = c(0,1,0),
   seasonal = list(order = c(0,1,1), period = 12), method = "ML"))
 
-a2 <- AICc(arima(tsdata.bc, order = c(0,1,0),
+a2 <- AICc(arima(c_train.bc, order = c(0,1,0),
   seasonal = list(order = c(0,1,3), period = 12), method = "ML"))
 
-a3 <- AICc(arima(tsdata.bc, order = c(0,1,0),
+a3 <- AICc(arima(c_train.bc, order = c(0,1,0),
   seasonal = list(order = c(2,1,1), period = 12), method = "ML"))
 
-a4 <- AICc(arima(tsdata.bc, order = c(0,1,0),
+a4 <- AICc(arima(c_train.bc, order = c(0,1,0),
   seasonal = list(order = c(2,1,3), period = 12), method = "ML"))
 
-a5 <- AICc(arima(tsdata.bc, order = c(0,1,1),
+a5 <- AICc(arima(c_train.bc, order = c(0,1,1),
   seasonal = list(order = c(0,1,1), period = 12), method = "ML"))
 
-a6 <- AICc(arima(tsdata.bc, order = c(0,1,1),
+a6 <- AICc(arima(c_train.bc, order = c(0,1,1),
   seasonal = list(order = c(0,1,3), period = 12), method = "ML"))
 
-a7 <- AICc(arima(tsdata.bc, order = c(0,1,1),
+a7 <- AICc(arima(c_train.bc, order = c(0,1,1),
   seasonal = list(order = c(2,1,1), period = 12), method = "ML"))
 
-a8 <- AICc(arima(tsdata.bc, order = c(0,1,1),
+a8 <- AICc(arima(c_train.bc, order = c(0,1,1),
   seasonal = list(order = c(2,1,3), period = 12), method = "ML"))
 
-a9 <- AICc(arima(tsdata.bc, order = c(0,1,2),
+a9 <- AICc(arima(c_train.bc, order = c(0,1,2),
   seasonal = list(order = c(0,1,1), period = 12), method = "ML"))
 
-a10 <- AICc(arima(tsdata.bc, order = c(0,1,2),
+a10 <- AICc(arima(c_train.bc, order = c(0,1,2),
   seasonal = list(order = c(0,1,3), period = 12), method = "ML"))
 
-a11 <- AICc(arima(tsdata.bc, order = c(0,1,2),
+a11 <- AICc(arima(c_train.bc, order = c(0,1,2),
   seasonal = list(order = c(2,1,1), period = 12), method = "ML"))
 
-a12 <- AICc(arima(tsdata.bc, order = c(0,1,2),
+a12 <- AICc(arima(c_train.bc, order = c(0,1,2),
   seasonal = list(order = c(2,1,3), period = 12), method = "ML"))
 
-b1 <- AICc(arima(tsdata.bc, order = c(1,1,0),
+b1 <- AICc(arima(c_train.bc, order = c(1,1,0),
   seasonal = list(order = c(0,1,1), period = 12), method = "ML"))
 
-b2 <- AICc(arima(tsdata.bc, order = c(1,1,0),
+b2 <- AICc(arima(c_train.bc, order = c(1,1,0),
   seasonal = list(order = c(0,1,3), period = 12), method = "ML"))
 
-b3 <- AICc(arima(tsdata.bc, order = c(1,1,0),
+b3 <- AICc(arima(c_train.bc, order = c(1,1,0),
   seasonal = list(order = c(2,1,1), period = 12), method = "ML"))
 
-b4 <- AICc(arima(tsdata.bc, order = c(1,1,0),
-  seasonal = list(order = c(2,1,3), period = 12), method = "ML"))
+#b4 <- AICc(arima(c_train.bc, order = c(1,1,0),
+  #seasonal = list(order = c(2,1,3), period = 12), method = "ML"))
+```
 
-b5 <- AICc(arima(tsdata.bc, order = c(1,1,1),
+```{r}
+b5 <- AICc(arima(c_train.bc, order = c(1,1,1),
   seasonal = list(order = c(0,1,1), period = 12), method = "ML"))
 
-b6 <- AICc(arima(tsdata.bc, order = c(1,1,1),
+b6 <- AICc(arima(c_train.bc, order = c(1,1,1),
   seasonal = list(order = c(0,1,3), period = 12), method = "ML"))
 
-#b7 <- AICc(arima(tsdata.bc, order = c(1,1,1),
+#b7 <- AICc(arima(c_train.bc, order = c(1,1,1),
   #seasonal = list(order = c(2,1,1), period = 12), method = "ML"))
 
-#b8 <- AICc(arima(tsdata.bc, order = c(1,1,1),
+#b8 <- AICc(arima(c_train.bc, order = c(1,1,1),
   #seasonal = list(order = c(2,1,3), period = 12), method = "ML"))
 
-b9 <- AICc(arima(tsdata.bc, order = c(1,1,2),
+b9 <- AICc(arima(c_train.bc, order = c(1,1,2),
   seasonal = list(order = c(0,1,1), period = 12), method = "ML"))
 
-b10 <- AICc(arima(tsdata.bc, order = c(1,1,2),
+b10 <- AICc(arima(c_train.bc, order = c(1,1,2),
   seasonal = list(order = c(0,1,3), period = 12), method = "ML"))
 
-#b11 <- AICc(arima(tsdata.bc, order = c(1,1,2),
+#b11 <- AICc(arima(c_train.bc, order = c(1,1,2),
   #seasonal = list(order = c(2,1,1), period = 12), method = "ML"))
 
-b12 <- AICc(arima(tsdata.bc, order = c(1,1,2),
-  seasonal = list(order = c(2,1,3), period = 12), method = "ML"))
+#b12 <- AICc(arima(c_train.bc, order = c(1,1,2),
+  #seasonal = list(order = c(2,1,3), period = 12), method = "ML"))
 
-
-c1 <- AICc(arima(tsdata.bc, order = c(2,1,0),
+```
+```{r}
+c1 <- AICc(arima(c_train.bc, order = c(2,1,0),
   seasonal = list(order = c(0,1,1), period = 12), method = "ML"))
 
-c2 <- AICc(arima(tsdata.bc, order = c(2,1,0),
+c2 <- AICc(arima(c_train.bc, order = c(2,1,0),
   seasonal = list(order = c(0,1,3), period = 12), method = "ML"))
 
-c3 <- AICc(arima(tsdata.bc, order = c(2,1,0),
+c3 <- AICc(arima(c_train.bc, order = c(2,1,0),
   seasonal = list(order = c(2,1,1), period = 12), method = "ML"))
 
-c4 <- AICc(arima(tsdata.bc, order = c(2,1,0),
+c4 <- AICc(arima(c_train.bc, order = c(2,1,0),
   seasonal = list(order = c(2,1,3), period = 12), method = "ML"))
 
-c5 <- AICc(arima(tsdata.bc, order = c(2,1,1),
+c5 <- AICc(arima(c_train.bc, order = c(2,1,1),
   seasonal = list(order = c(0,1,1), period = 12), method = "ML"))
 
-c6 <- AICc(arima(tsdata.bc, order = c(2,1,1),
+c6 <- AICc(arima(c_train.bc, order = c(2,1,1),
   seasonal = list(order = c(0,1,3), period = 12), method = "ML"))
 
-c7 <- AICc(arima(tsdata.bc, order = c(2,1,1),
+c7 <- AICc(arima(c_train.bc, order = c(2,1,1),
   seasonal = list(order = c(2,1,1), period = 12), method = "ML"))
 
-c8 <- AICc(arima(tsdata.bc, order = c(2,1,1),
+c8 <- AICc(arima(c_train.bc, order = c(2,1,1),
   seasonal = list(order = c(2,1,3), period = 12), method = "ML"))
 
-c9 <- AICc(arima(tsdata.bc, order = c(2,1,2),
+c9 <- AICc(arima(c_train.bc, order = c(2,1,2),
   seasonal = list(order = c(0,1,1), period = 12), method = "ML"))
 
-c10 <- AICc(arima(tsdata.bc, order = c(2,1,2),
+c10 <- AICc(arima(c_train.bc, order = c(2,1,2),
   seasonal = list(order = c(0,1,3), period = 12), method = "ML"))
 
-c11 <- AICc(arima(tsdata.bc, order = c(2,1,2),
+c11 <- AICc(arima(c_train.bc, order = c(2,1,2),
   seasonal = list(order = c(2,1,1), period = 12), method = "ML"))
 
-c12 <- AICc(arima(tsdata.bc, order = c(2,1,2),
+c12 <- AICc(arima(c_train.bc, order = c(2,1,2),
   seasonal = list(order = c(2,1,3), period = 12), method = "ML"))
 ```
 ```{r}
@@ -292,7 +313,7 @@ So one option is to use SARIMA $(2,1,0)*(0,1,1)_{12}$, and another one is to use
 
 #### Model 1: $(2,1,0)*(0,1,1)_{12}$
 ```{r}
-arima(tsdata.bc, order = c(2,1,0), seasonal = list(order = c(0,1,1), period = 12), method = "ML")
+arima(c_train.bc, order = c(0,0,2), seasonal = list(order = c(2,0,0), period = 12), method = "ML")
 ```
 Set the coefficeint ar1 = 0 and then test. 
 Only parameter for ar2 is significant. 
@@ -312,7 +333,7 @@ The residual plot shows no trend, no seasonality, and no visible change of varia
 
 ```{r}
 # Plot the residuals
-fit1 <- arima(tsdata.bc, order = c(2,1,0),
+fit1 <- arima(c_train.bc, order = c(2,1,0),
               seasonal = list(order = c(0,1,1), period = 12), method = "ML") 
 res1 <- residuals(fit1)
 plot.ts(res1, xlab = "")
@@ -342,13 +363,9 @@ The majority of the data lies on the qqline.
 
 White Noise?
 
-#### Model 2: $(0,1,2)*(0,1,1)_{12}$
+#### Model 2: $(0,0,2)*(2,0,0)_{12}$
 ```{r}
-arima(tsdata.bc, order = c(0,1,2), seasonal = list(order = c(0,1,1), period = 12), method = "ML")
-```
-```{r}
-arima(apt.log, order=c(0,1,3), seasonal = list(order = c(0,1,1), period = 12), fixed = c(NA, 0, NA, NA),
-method="ML")
+arima(c_train.bc, order = c(0,0,2), seasonal = list(order = c(0,2,2), period = 12), method = "ML")
 ```
 
 Only parameter for ma2 is significant.
@@ -356,7 +373,7 @@ Only parameter for ma2 is significant.
 Since it's MA models, then it is always stationary.
 
 ```{r}
-polyroot(c(1, 0.0430))
+polyroot(c(1, 1.0489))
 ```
 
 Since it's outside of unit circle, then it is invertible.
@@ -367,8 +384,8 @@ The residual plot shows no trend, no seasonality, and no visible change of varia
 
 ```{r}
 # Plot the residuals
-fit2 <- arima(tsdata.bc, order = c(0,1,2),
-              seasonal = list(order = c(0,1,1), period = 12), method = "ML") 
+fit2 <- arima(c_train.bc, order = c(0,0,2),
+              seasonal = list(order = c(2,0,0), period = 12), method = "ML") 
 res2 <- residuals(fit2)
 plot.ts(res2, xlab = "")
 abline(h=mean(res2),col = "blue")
@@ -503,14 +520,14 @@ qqline(res2,col ="blue")
 
 
 ```{r}
-fit.1<-arima(tsdata, order = c(2,1,0),
+fit.1<-arima(c_train, order = c(0,0,2),
 seasonal = list(order = c(0,1,1), period = 12), method = "ML")
 # Create confidence interval
 pred.tr <- predict(fit.1, n.ahead = 93)
 U.tr = pred.tr$pred + 2*pred.tr$se
 L.tr = pred.tr$pred - 2*pred.tr$se
 # Forecast on original data
-plot.ts(tsdata, xlim = c(1984,2022), ylim = c(0,13)) 
+plot.ts(c_train, xlim = c(1990,2022), ylim = c(0,13)) 
 lines(U.tr, col = "blue", lty = "dashed")
 lines(L.tr, col = "blue", lty = "dashed") 
 points(pred.tr$pred,col = "red", pch = 1) 
@@ -518,7 +535,7 @@ points(pred.tr$pred,col = "red", pch = 1)
 ```{r}
 # Zoom in graph
 par(mfrow=c(1,2))
-plot.ts(tsdata, xlim = c(2021,2022), ylim = c(1,5))
+plot.ts(c_train, xlim = c(2018,2023), ylim = c(1,4))
 lines(U.tr, col = "blue", lty = "dashed")
 lines(L.tr, col = "blue", lty = "dashed") 
 points(pred.tr$pred,col = "red", pch = 1) 
@@ -526,12 +543,12 @@ points(pred.tr$pred,col = "red", pch = 1)
 
 ```{r}
 # Forecast with test dataset
-plot.ts(c_test, xlim = c(2021,2022), ylim = c(1,5))
-lines(U.tr, col = "blue", lty = "dashed")
-lines(L.tr, col = "blue", lty = "dashed")
-#points(pred.tr$pred,col = "red", pch = 1)
-points(c_test,col = "slategrey", pch = 20)
+plot.ts(data, xlim = c(2010,2025), ylim = c(0,7))
+lines(L.tr, col = "blue", lty = "dashed") 
+points(pred.tr$pred,col = "red", pch = 1) 
+points(c_test,col = "slategrey", pch = 20) 
 ```
+
 
 
 
