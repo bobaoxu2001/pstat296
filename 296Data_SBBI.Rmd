@@ -50,17 +50,15 @@ TR26_21
 
 ```{r}
 Govt_20_Yield <- TR26_21[,c(1,8)]
-
+Govt_20_Yield 
 Govt_20_Yield$yield_percentage <- round(Govt_20_Yield$lt_govt_yield_20_year*100, digits = 3)
-#Govt_20_Yield$yield_percentage
+# Govt_20_Yield$yield_percentage
 ```
 
 ```{r}
 summary(Govt_20_Yield$yield_percentage)
 ```
-```{r}
-plot(Govt_20_Yield$yield_percentage,type="l",)
-```
+
 ```{r}
 # Since there is a big difference between the time before index 769 (1990.01) and after that
 # So we choose to research in the data after index 709
@@ -71,7 +69,6 @@ test <- Govt_20_Yield$yield_percentage[1153:1161]
 #test set contains data points from 2022.1 and 2022.9, 9 points totally
 ```
 
-
 ```{r}
 par(mfrow=c(3, 1))
 data <- ts(Govt_20_Yield$yield_percentage[769:1161], frequency = 12, start = c(1990,1,1))
@@ -81,13 +78,18 @@ ts.plot(data)
 ts.plot(c_train)
 ts.plot(c_test)
 ```
+```{r}
+plot.ts(c_train, main="SBBI Interest training data") 
+fit <- lm(c_train ~ as.numeric(1:length(c_train)))
+abline(h=mean(c_train), col="blue")
+```
 
 ```{r}
 hist(c_train, main="Histogram",
 xlab="date")
 ```
 ```{r}
-acf(train, lag.max = 40, main = "")
+acf(c_train, lag.max = 40, main = "")
 ```
 To make the data stationary (variance/seasonality/trend),
 ,we use the Box-Cox transformation firstly

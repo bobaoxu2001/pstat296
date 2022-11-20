@@ -1,0 +1,60 @@
+---
+title: "Inflation Rate"
+author: "AO XU"
+date: "2022-11-18"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# SBBI Raw Data for Capital Markets (2022_11_11)
+```{r}
+#install.packages("qpcR")
+#install.packages("rgl")
+```
+
+```{r,echo=FALSE, result = 'hide',fig.show='hide',message=FALSE}
+setwd("/Users/xuao/Documents/PSTAT296A/pstat296")
+library(tsdl) 
+library(forecast) 
+library(tidyverse) 
+library(astsa)
+library(MASS) 
+library(ggplot2) 
+library(readxl)
+library(ggfortify) 
+library(forecast) 
+library(GeneCycle) 
+library(qpcR) 
+require(TSA) 
+#source("plot.roots.R")
+```
+# Import SBBI Raw Data for Capital Markets (2022_11_11)
+# Renewed data for LT Govt Yield (20yr) from Jan-1926 to Sep-2022
+```{r}
+TR26_21 <- read_excel("/Users/xuao/Documents/PSTAT296A/pstat296/2022-11.11/SBBI Data for Capital Markets (2022_11_11).xlsx", sheet="Processed")
+colnames(TR26_21) <- c("Observed Month", "Large Cap TR", "LT Govt TR 20 YR","IT Govt TR 5 YR","LT Corp TR 20 YR","T-Bill TR 30 DAY","US CPI/ INFLATION","LT Govt Yield 20 YEAR","IT Govt Yield 5 YEAR")
+TR26_21 <- TR26_21 %>%
+  filter(!row_number() %in% c(1:5)) %>%
+  janitor::clean_names()
+TR26_21 <- as.data.frame(sapply(TR26_21, as.numeric))
+TR26_21 <- TR26_21 %>%
+  mutate(observed_month = as.Date(observed_month,origin = "1899-12-30")) 
+TR26_21
+```
+```{r}
+dataframe <- TR26_21[,c(1,7)]
+dataframe
+us_cpi_inflation$yield_percentage <- round(dataframe$us_cpi_inflation*100, digits = 3)
+us_cpi_inflation$yield_percentage
+```
+```{r}
+summary(us_cpi_inflation$yield_percentage)
+```
+
+```{r}
+plot(us_cpi_inflation$yield_percentage,type="l")
+```
+
