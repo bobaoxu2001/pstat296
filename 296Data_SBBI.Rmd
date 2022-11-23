@@ -52,7 +52,8 @@ TR26_21
 Govt_20_Yield <- TR26_21[,c(1,8)]
 Govt_20_Yield 
 Govt_20_Yield$yield_percentage <- round(Govt_20_Yield$lt_govt_yield_20_year*100, digits = 3)
-# Govt_20_Yield$yield_percentage
+percentage <- ts(Govt_20_Yield$yield_percentage[1:1161], frequency = 12, start = c(1926,1,1))
+ts.plot(percentage, type="l")
 ```
 
 ```{r}
@@ -124,7 +125,7 @@ Since the Box-Cox plot does not contain neither has 0 nor 1 in the confidence in
 $\lambda \approx$ 0.6262626 that maximizes the log-likelihood.
 
 ```{r}
-# Deseasonlize:
+# Deseasonalize and detrend:
 c_train.bc.12 <- diff(c_train.bc, 12)
 c_train.bc.12.1 <- diff(c_train.bc.12, 1)
 c_train.bc.12.1.1 <- diff(c_train.bc.12.1, 1)
