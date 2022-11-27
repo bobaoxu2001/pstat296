@@ -86,8 +86,7 @@ abline(h=mean(c_train), col="blue")
 ```
 
 ```{r}
-hist(c_train, main="Histogram",
-xlab="date")
+hist(c_train, main="Histogram of c_train",xlab="date")
 ```
 ```{r}
 acf(c_train, lag.max = 40, main = "")
@@ -102,6 +101,9 @@ lambda <- bcTransform$x[which.max(bcTransform$y)]
 c_train.bc = (1/lambda)*(c_train^lambda-1)
 lambda
 plot(c_train.bc)
+```
+```{r}
+hist(c_train.bc, main="Histogram of c_train.bc",xlab="date")
 ```
 
 ```{r}
@@ -128,420 +130,203 @@ $\lambda \approx$ 0.6262626 that maximizes the log-likelihood.
 # Deseasonalize and detrend:
 c_train.bc.12 <- diff(c_train.bc, 12)
 c_train.bc.12.1 <- diff(c_train.bc.12, 1)
-c_train.bc.12.1.1 <- diff(c_train.bc.12.1, 1)
+c_train.bc.1 <- diff(c_train.bc, 1)
+c_train.bc.1.12 <- diff(c_train.bc.1, 12)
 var(c_train.bc)
 var(c_train.bc.12);
-var(c_train.bc.12.1); 
-var(c_train.bc.12.1.1)
+var(c_train.bc.12.1);
+var(c_train.bc.1);
+var(c_train.bc.1.12)
 ```
 ```{r}
-hist(c_train.bc.12.1, col = "light blue", xlab = "", main = "") 
+hist(c_train.bc.1, col = "light blue", xlab = "", main = "") 
 ```
 
 
 ```{r}
 # Plot it for De-seasonlized Time Series :
 par(mfrow=c(1, 1))
-ts.plot(c_train.bc.12.1, main="De-seasonlized Time Series",
-ylab=expression(nabla[1]~nabla[12]~Y[t]))
-abline(h=mean(c_train.bc.12.1), lty=2)
+ts.plot(c_train.bc.1, main="De-seasonlized Time Series",
+ylab=expression(nabla[1]~Y[t]))
+abline(h=mean(c_train.bc.1), lty=2)
 ```
 ### Model Identification
 
 ```{r}
-acf(c_train.bc.12.1, lag.max=120, main="ACF")
-pacf(c_train.bc.12.1, lag.max=120, main="ACF")
+acf(c_train.bc.1, lag.max=120, main="ACF")
+pacf(c_train.bc.1, lag.max=120, main="PACF")
 ```
-ACF outside confidence intervals: Lags 1, may be 3
+ACF outside confidence intervals: Lags 2, may be 
 PACF outside confidence intervals: Lags 1, 2, 3, 4
-It seems like a MA model.
+d = 1; 
+q = 2; 
+p = 2;
+
 
 ```{r}
 library(forecast)
-auto.arima(c_train.bc.12.1,ic = c("aicc"),seasonal = T,stepwise = F)
+auto.arima(c_train.bc.1,ic = c("aicc"),seasonal = F,stepwise = F)
 ```
 
 ```{r}
-arima(c_train.bc.12.1,order=c(0,0,2), seasonal = list(order = c(2,0,0), period = 12), method="ML")
+arima(c_train.bc.1,order=c(2,1,2), method="ML")
 ```
 ```{r}
-AICc(arima(c_train.bc.12.1, order=c(0,0,2), seasonal = list(order = c(2,0,0), period = 12), method="ML")); 
+AICc(arima(c_train.bc.1, order=c(0,0,2), method="ML")) 
+```
+
+### Model 1: ARIMA(0,0,2)
+```{r}
+arima(c_train.bc.1, order=c(0,0,2),fixed=c(0,NA,NA), method="ML")
 ```
 ```{r}
-arima(c_train.bc.12.1, order=c(0,0,2), seasonal = list(order = c(2,0,0), period = 12), fixed=c(0,NA,NA, NA, NA), method="ML")
+AICc(arima(c_train.bc.1, order=c(0,0,2),fixed=c(0,NA,NA), method="ML"))
 ```
+
+$U_t = (1 – 0.1488B^2)Z_t -0.0145$
 
 ```{r}
-AICc(arima(c_train.bc.12.1, order=c(0,0,2), seasonal = list(order = c(2,0,0), period = 12), fixed = c(0, NA,NA,NA,NA), method="ML"))
+polyroot(c(1, 0, -0.1448))
 ```
-
-```{r}
-# Compare the ACF and PACF of c_train.12.1
-par(mfrow=c(2,3))
-#acf(train, lag.max = 60, main = expression(U[t]))
-#acf(c_train.12, lag.max = 60, main = expression(nabla[12]~~U[t])) 
-acf(c_train.bc.12.1, lag.max = 60, main = expression(nabla[1]~nabla[12]~~U[t])) 
-#pacf(train, lag.max = 60, main = "")
-#pacf(c_train.12, lag.max = 60, main = "")
-pacf(c_train.bc.12.1, lag.max = 60, main = "")
-```
-q  = 2, Q = 1 or 3
-p = 2, P = 0
-```{r}
-# Calculate the AICc of possible models
-a1 <- AICc(arima(c_train.bc, order = c(0,1,0),
-  seasonal = list(order = c(0,1,1), period = 12), method = "ML"))
-
-a2 <- AICc(arima(c_train.bc, order = c(0,1,0),
-  seasonal = list(order = c(0,1,3), period = 12), method = "ML"))
-
-a3 <- AICc(arima(c_train.bc, order = c(0,1,0),
-  seasonal = list(order = c(2,1,1), period = 12), method = "ML"))
-
-a4 <- AICc(arima(c_train.bc, order = c(0,1,0),
-  seasonal = list(order = c(2,1,3), period = 12), method = "ML"))
-
-a5 <- AICc(arima(c_train.bc, order = c(0,1,1),
-  seasonal = list(order = c(0,1,1), period = 12), method = "ML"))
-
-a6 <- AICc(arima(c_train.bc, order = c(0,1,1),
-  seasonal = list(order = c(0,1,3), period = 12), method = "ML"))
-
-a7 <- AICc(arima(c_train.bc, order = c(0,1,1),
-  seasonal = list(order = c(2,1,1), period = 12), method = "ML"))
-
-a8 <- AICc(arima(c_train.bc, order = c(0,1,1),
-  seasonal = list(order = c(2,1,3), period = 12), method = "ML"))
-
-a9 <- AICc(arima(c_train.bc, order = c(0,1,2),
-  seasonal = list(order = c(0,1,1), period = 12), method = "ML"))
-
-a10 <- AICc(arima(c_train.bc, order = c(0,1,2),
-  seasonal = list(order = c(0,1,3), period = 12), method = "ML"))
-
-a11 <- AICc(arima(c_train.bc, order = c(0,1,2),
-  seasonal = list(order = c(2,1,1), period = 12), method = "ML"))
-
-a12 <- AICc(arima(c_train.bc, order = c(0,1,2),
-  seasonal = list(order = c(2,1,3), period = 12), method = "ML"))
-
-b1 <- AICc(arima(c_train.bc, order = c(1,1,0),
-  seasonal = list(order = c(0,1,1), period = 12), method = "ML"))
-
-b2 <- AICc(arima(c_train.bc, order = c(1,1,0),
-  seasonal = list(order = c(0,1,3), period = 12), method = "ML"))
-
-b3 <- AICc(arima(c_train.bc, order = c(1,1,0),
-  seasonal = list(order = c(2,1,1), period = 12), method = "ML"))
-
-#b4 <- AICc(arima(c_train.bc, order = c(1,1,0),
-  #seasonal = list(order = c(2,1,3), period = 12), method = "ML"))
-```
-
-```{r}
-b5 <- AICc(arima(c_train.bc, order = c(1,1,1),
-  seasonal = list(order = c(0,1,1), period = 12), method = "ML"))
-
-b6 <- AICc(arima(c_train.bc, order = c(1,1,1),
-  seasonal = list(order = c(0,1,3), period = 12), method = "ML"))
-
-#b7 <- AICc(arima(c_train.bc, order = c(1,1,1),
-  #seasonal = list(order = c(2,1,1), period = 12), method = "ML"))
-
-#b8 <- AICc(arima(c_train.bc, order = c(1,1,1),
-  #seasonal = list(order = c(2,1,3), period = 12), method = "ML"))
-
-b9 <- AICc(arima(c_train.bc, order = c(1,1,2),
-  seasonal = list(order = c(0,1,1), period = 12), method = "ML"))
-
-b10 <- AICc(arima(c_train.bc, order = c(1,1,2),
-  seasonal = list(order = c(0,1,3), period = 12), method = "ML"))
-
-#b11 <- AICc(arima(c_train.bc, order = c(1,1,2),
-  #seasonal = list(order = c(2,1,1), period = 12), method = "ML"))
-
-#b12 <- AICc(arima(c_train.bc, order = c(1,1,2),
-  #seasonal = list(order = c(2,1,3), period = 12), method = "ML"))
-
-```
-```{r}
-c1 <- AICc(arima(c_train.bc, order = c(2,1,0),
-  seasonal = list(order = c(0,1,1), period = 12), method = "ML"))
-
-c2 <- AICc(arima(c_train.bc, order = c(2,1,0),
-  seasonal = list(order = c(0,1,3), period = 12), method = "ML"))
-
-c3 <- AICc(arima(c_train.bc, order = c(2,1,0),
-  seasonal = list(order = c(2,1,1), period = 12), method = "ML"))
-
-c4 <- AICc(arima(c_train.bc, order = c(2,1,0),
-  seasonal = list(order = c(2,1,3), period = 12), method = "ML"))
-
-c5 <- AICc(arima(c_train.bc, order = c(2,1,1),
-  seasonal = list(order = c(0,1,1), period = 12), method = "ML"))
-
-c6 <- AICc(arima(c_train.bc, order = c(2,1,1),
-  seasonal = list(order = c(0,1,3), period = 12), method = "ML"))
-
-c7 <- AICc(arima(c_train.bc, order = c(2,1,1),
-  seasonal = list(order = c(2,1,1), period = 12), method = "ML"))
-
-c8 <- AICc(arima(c_train.bc, order = c(2,1,1),
-  seasonal = list(order = c(2,1,3), period = 12), method = "ML"))
-
-c9 <- AICc(arima(c_train.bc, order = c(2,1,2),
-  seasonal = list(order = c(0,1,1), period = 12), method = "ML"))
-
-c10 <- AICc(arima(c_train.bc, order = c(2,1,2),
-  seasonal = list(order = c(0,1,3), period = 12), method = "ML"))
-
-c11 <- AICc(arima(c_train.bc, order = c(2,1,2),
-  seasonal = list(order = c(2,1,1), period = 12), method = "ML"))
-
-c12 <- AICc(arima(c_train.bc, order = c(2,1,2),
-  seasonal = list(order = c(2,1,3), period = 12), method = "ML"))
-```
-```{r}
-AICc_value <- rbind(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,b1,b2,b4,b5,b6,b9,b10,b12,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12) 
-#AICc_value
-AICc_value[which.min(AICc_value), ]
-m1 <- 
-AICc_value2 <- rbind(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,b1,b2,b4,b5,b6,b9,b10,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12) 
-AICc_value2[which.min(AICc_value2), ]
-```
-
-So one option is to use SARIMA $(2,1,0)*(0,1,1)_{12}$, and another one is to use $(0,1,2)*(0,1,1)_{12}$
-
-## Model Selection
-
-#### Model 1: $(2,1,0)*(0,1,1)_{12}$
-```{r}
-arima(c_train.bc, order = c(0,0,2), seasonal = list(order = c(2,0,0), period = 12), method = "ML")
-```
-Set the coefficeint ar1 = 0 and then test. 
-Only parameter for ar2 is significant. 
-```{r}
-polyroot(c(1, 0.0283))
-```
-Since it's outside of the unit circle, so it's staionary. 
-
-Since it's AR models, then it is always invertible.
-
-
-Then we move on to examine the residual of Model 1. 
-
-The residual plot shows no trend, no seasonality, and no visible change of variance. Its mean is approximately zero.
-
-
 
 ```{r}
 # Plot the residuals
-fit1 <- arima(c_train.bc, order = c(2,1,0),
-              seasonal = list(order = c(0,1,1), period = 12), method = "ML") 
+fit1 <- arima(c_train, order = c(0,0,2),
+seasonal = list(order = c(0,0,2), period = 12), method = "ML") 
 res1 <- residuals(fit1)
 plot.ts(res1, xlab = "")
 abline(h=mean(res1),col = "blue")
-```
-
-Then we move on to examine the residual of Model 1. 
-
-The residual plot shows no trend, no seasonality, and no visible change of variance. Its mean is approximately zero.
-```{r}
 # Plot the histogram, Q-Q normal plot of the residual par(mfrow=c(1,2))
 hist(res1, density = 20, breaks = 20,
-col = "blue", xlab = "", prob = TRUE, main = "")
+col = "blue", xlab = "", prob = TRUE, main = "") 
 m1 <- mean(res1)
 std1 <- sqrt(var(res1)) 
-curve(dnorm(x,m1,std1),add = TRUE) 
-qqnorm(res1,main = "", xlab = "")
+curve(dnorm(x,m1,std1),add = TRUE)
+qqnorm(res1,main = "", xlab = "") 
 qqline(res1, col = "blue")
 # Plot the ACF and PACF of the residual
-par(mfrow=c(1,2))
-acf(res1,lag.max=240, main = "") 
-pacf(res1,lag.max=240, main = "")
-```
-The histogram looks normal and center at zero. 
-
-The majority of the data lies on the qqline.
-
-White Noise?
-
-#### Model 2: $(0,0,2)*(2,0,0)_{12}$
-```{r}
-arima(c_train.bc, order = c(0,0,2), seasonal = list(order = c(0,2,2), period = 12), method = "ML")
-```
-
-Only parameter for ma2 is significant.
-
-Since it's MA models, then it is always stationary.
-
-```{r}
-polyroot(c(1, 1.0489))
-```
-
-Since it's outside of unit circle, then it is invertible.
-
-Then we move on to examine the residual of Model 2. 
-
-The residual plot shows no trend, no seasonality, and no visible change of variance. Its mean is approximately zero.
-
-```{r}
-# Plot the residuals
-fit2 <- arima(c_train.bc, order = c(0,0,2),
-              seasonal = list(order = c(2,0,0), period = 12), method = "ML") 
-res2 <- residuals(fit2)
-plot.ts(res2, xlab = "")
-abline(h=mean(res2),col = "blue")
-```
-The residual plot shows no trend, no seasonality, and no visible change of variance.
-
-Its mean is approximately zero.
-
-
-```{r}
-# Plot the histogram, Q-Q normal plot of the residual par(mfrow=c(1,2))
-hist(res1, density = 20, breaks = 20,
-col = "blue", xlab = "", prob = TRUE, main = "")
-m2 <- mean(res2)
-std2 <- sqrt(var(res2)) 
-curve(dnorm(x,m2,std2),add = TRUE) 
-qqnorm(res2,main = "", xlab = "")
-qqline(res2, col = "blue")
-# Plot the ACF and PACF of the residual
-par(mfrow=c(1,2))
-acf(res2,lag.max=60, main = "") 
-pacf(res2,lag.max=60, main = "")
-```
-White Noise?
-
-## Model Diagnostics
-
-#### Model 1: $(2,1,0)*(0,1,1)_{12}$
-```{r}
-# Residual plots:
-res1 <- residuals(fit1)
-mean(res1); var(res1)
-# layout(matrix(c(1, 1, 2, 3), 2, 2, byrow=T))
-par(mfrow=c(1, 1))
-ts.plot(res1, main="Fitted Residuals")
-t1 <- 1:length(res1)
-fit.res1 = lm(res1~ t1)
-abline(fit.res1)
-abline(h = mean(res1), col = "red")
+par(mfrow=c(1,2)) 
+acf(res1,lag.max=60, main = "") 
+pacf(res1,lag.max=60, main = "")
 ```
 ```{r}
-# ACF and PACF:
-par(mfrow=c(1, 2))
-acf(res1, main="Autocorrelation")
-pacf(res1, main="Partial Autocorrelation")
-```
-Using lag = 20, do Box-Pierce, Box-Ljung, McLeod-Li tests.
-df = h-p-q = 20-2=18
-```{r}
-sqrt(length(train))
-```
-
-```{r}
-Box.test(res1, lag = 20, type = c("Box-Pierce"), fitdf = 2)
-```
-
-
-```{r}
-Box.test(res1, lag = 20, type = c("Ljung-Box"), fitdf = 2)
-```
-
-```{r}
-Box.test(res1^2, lag = 20, type = c("Ljung-Box"), fitdf = 0)
-```
-
-```{r}
+# Perform test on Model 1's residual
+shapiro.test(res1)
+Box.test(res1,lag = 20, type = c("Box-Pierce"),fitdf = 1) 
+Box.test(res1,lag = 20, type = c("Ljung-Box"),fitdf = 1) 
+Box.test(res1^2,lag = 20, type = c("Ljung-Box"),fitdf = 0) 
 ar(res1,aic=TRUE,order.max=NULL, mehod = c("yule-walker"))
 ```
 
-
-Then, We check normality assumption.# Test for normality of residuals
 ```{r}
-shapiro.test(res1)
-```
-```{r}
-# Histogram and QQ-plot:
-par(mfrow=c(1,2))
-hist(res1,main = "Histogram")
-qqnorm(res1)
-qqline(res1,col ="blue")
-```
-
-#### Model 2: $(0,1,2)*(0,1,1)_{12}$
-```{r}
-# Residual plots:
-res2 <- residuals(fit2)
-mean(res2); var(res2)
-# layout(matrix(c(1, 1, 2, 3), 2, 2, byrow=T))
-par(mfrow=c(1, 1))
-ts.plot(res2, main="Fitted Residuals")
-t2 <- 1:length(res2)
-fit.res2 = lm(res2~ t2)
-abline(fit.res2)
-abline(h = mean(res2), col = "red")
-```
-```{r}
-# ACF and PACF:
-par(mfrow=c(1, 2))
-acf(res2, main="Autocorrelation")
-pacf(res2, main="Partial Autocorrelation")
-```
-Using lag = 20, do Box-Pierce, Box-Ljung, McLeod-Li tests.
-```{r}
-Box.test(res2, lag = 20, type = c("Box-Pierce"), fitdf = 2)
-```
-
-
-```{r}
-Box.test(res2, lag = 20, type = c("Ljung-Box"), fitdf = 2)
-```
-
-```{r}
-Box.test(res2^2, lag = 20, type = c("Ljung-Box"), fitdf = 0)
-```
-
-```{r}
-ar(res2,aic=TRUE,order.max=NULL, mehod = c("yule-walker"))
-```
-
-Then, We check normality assumption.# Test for normality of residuals
-```{r}
-shapiro.test(res2)
-```
-
-```{r}
-# Histogram and QQ-plot:
-par(mfrow=c(1,2))
-hist(res2,main = "Histogram")
-qqnorm(res2)
-qqline(res2,col ="blue")
-```
-
-
-```{r}
-fit.1<-arima(c_train, order = c(0,0,2),
-seasonal = list(order = c(0,1,1), period = 12), method = "ML")
+fit.1<-arima(c_train, order = c(0,0,2), fixed=c(0,NA,NA), method = "ML")
 # Create confidence interval
-pred.tr <- predict(fit.1, n.ahead = 93)
-U.tr = pred.tr$pred + 2*pred.tr$se
-L.tr = pred.tr$pred - 2*pred.tr$se
+pred.tr <- predict(fit.1, n.ahead = 12)
+U1 = pred.tr$pred + 2*pred.tr$se
+L1 = pred.tr$pred - 2*pred.tr$se
 # Forecast on original data
-plot.ts(c_train, xlim = c(1990,2022), ylim = c(0,13)) 
-lines(U.tr, col = "blue", lty = "dashed")
-lines(L.tr, col = "blue", lty = "dashed") 
+plot.ts(c_train, xlim = c(1990,2022), ylim = c(1,10)) 
+lines(U1, col = "blue", lty = "dashed")
+lines(L1, col = "blue", lty = "dashed") 
 points(pred.tr$pred,col = "red", pch = 1) 
+legend("bottomright", c("Prediction","95% C.I."),
+
+
+fill = c("red", "blue"), cex = 1.25) # Zoom in graph
+plot.ts(c_train, xlim = c(1990,2022), ylim = c(1,max(U1)))
+lines(U1, col = "blue", lty = "dashed")
+lines(L1, col = "blue", lty = "dashed") 
+points(pred.tr$pred,col = "red", pch = 1) 
+legend("bottomright", c("Prediction","95% C.I."),
+
+       
+fill = c("red", "blue"), cex = 1.25) # Forecast with test dataset
+plot.ts(milk, xlim = c(1990,2022), ylim = c(1,max(U1))) 
+lines(U1, col = "blue", lty = "dashed")
+lines(L1, col = "blue", lty = "dashed") 
+points(pred.tr$pred,col = "red", pch = 1)
+points(c_test,col = "slategrey", pch = 20) 
+legend("bottomright", c("Prediction","95% C.I.","c_test"),
+fill = c("red", "blue","slategrey"), cex = 1.25)
+```
+#### Model 2: ARIMA(2,1,2)
+```{r}
+arima(c_train.bc, order = c(2,1,2), method = "ML")
+```
+
+```{r}
+arima(c_train.bc, order = c(2,1,2),fixed=c(NA,0,NA,0), method = "ML")
+```
+
+$ (1+B)U_t = (1 – 0.9677B)Z_t$ 
+```{r}
+AICc(arima(c_train.bc.1, order=c(2,1,2), method="ML")) 
 ```
 ```{r}
-# Zoom in graph
-par(mfrow=c(1,2))
-plot.ts(c_train, xlim = c(2018,2023), ylim = c(1,4))
-lines(U.tr, col = "blue", lty = "dashed")
-lines(L.tr, col = "blue", lty = "dashed") 
+AICc(arima(c_train.bc, order = c(2,1,2),fixed=c(NA,0,NA,0), method = "ML"))
+```
+
+
+```{r}
+# Plot the residuals
+fit2 <- arima(c_train.bc, order = c(2,1,2),fixed=c(NA,0,NA,0), method = "ML") 
+res2 <- residuals(fit2)
+plot.ts(res2, xlab = "")
+abline(h=mean(res2),col = "blue")
+# Plot the histogram, Q-Q normal plot of the residual par(mfrow=c(1,2))
+hist(res2, density = 20, breaks = 20,
+col2 = "blue", xlab = "", prob = TRUE, main = "") 
+m2 <- mean(res2)
+std2 <- sqrt(var(res2)) 
+curve(dnorm(x,m2,std2),add = TRUE)
+qqnorm(res2,main = "", xlab = "") 
+qqline(res2, col = "blue")
+# Plot the ACF and PACF of the residual
+par(mfrow=c(1,2)) 
+acf(res2,lag.max=60, main = "") 
+pacf(res2,lag.max=60, main = "")
+```
+
+```{r}
+# Perform test on Model 1's residual
+shapiro.test(res2)
+Box.test(res2,lag = 20, type = c("Box-Pierce"),fitdf = 2) 
+Box.test(res2,lag = 20, type = c("Ljung-Box"),fitdf = 2) 
+Box.test(res2^2,lag = 20, type = c("Ljung-Box"),fitdf = 0) 
+ar(res1,aic=TRUE,order.max=NULL, mehod = c("yule-walker"))
+```
+
+```{r}
+fit.1<-arima(c_train, order = c(0,1,1),
+seasonal = list(order = c(0,1,4), period = 12), method = "ML")
+# Create confidence interval
+pred.tr <- predict(fit.1, n.ahead = 12)
+U = pred.tr$pred + 2*pred.tr$se
+L = pred.tr$pred - 2*pred.tr$se
+# Forecast on original data
+plot.ts(c_train, xlim = c(1962,1976), ylim = c(500,1000)) 
+lines(U, col = "blue", lty = "dashed")
+lines(L, col = "blue", lty = "dashed") 
 points(pred.tr$pred,col = "red", pch = 1) 
+legend("bottomright", c("Prediction","95% C.I."),
+
+
+fill = c("red", "blue"), cex = 1.25) # Zoom in graph
+plot.ts(c_train, xlim = c(1973,1976), ylim = c(700,max(U)))
+lines(U, col = "blue", lty = "dashed")
+lines(L, col = "blue", lty = "dashed") 
+points(pred.tr$pred,col = "red", pch = 1) 
+legend("bottomright", c("Prediction","95% C.I."),
+
+       
+fill = c("red", "blue"), cex = 1.25) # Forecast with test dataset
+plot.ts(milk, xlim = c(1973,1976), ylim = c(700,max(U))) 
+lines(U, col = "blue", lty = "dashed")
+lines(L, col = "blue", lty = "dashed") 
+points(pred.tr$pred,col = "red", pch = 1)
+points(c_test,col = "slategrey", pch = 20) 
+legend("bottomright", c("Prediction","95% C.I.","c_test"),
+fill = c("red", "blue","slategrey"), cex = 1.25)
 ```
 
 ```{r}
