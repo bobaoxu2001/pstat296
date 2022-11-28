@@ -275,12 +275,13 @@ AICc(arima(c_train.bc, order=c(2,1,2), method="ML"))
 
 $ (1+0.7102B)Y_t = (1 – 0.6048B)Z_t$ 
 
-$ Y_t+0.7102B)Y_t = (1 – 0.6048B)Z_t$
+$ Y_t+0.3635Y_{t-1}+0.1216Y_{t-2} = Z_t + 0.4271Z_{t-1}$
+$ Z_t  N(0,0.03777)$
 ```{r}
-AICc(arima(c_train.bc, order=c(2,1,2), method="ML")) 
+AICc(arima(c_train.bc, order=c(2,1,2), fixed=c(NA,NA,NA,0),method="ML")) 
 ```
 ```{r}
-AICc(arima(c_train.bc, order = c(2,1,2),fixed=c(NA,NA,NA,0), method = "ML"))
+AICc(arima(c_train.bc, order = c(2,1,2),fixed=c(NA,0,NA,0), method = "ML"))
 ```
 
 
