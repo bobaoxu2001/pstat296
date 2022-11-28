@@ -158,7 +158,7 @@ hist(c_train.bc.1, col = "light blue", xlab = "", main = "")
 ```{r}
 # Plot it for De-seasonlized Time Series :
 par(mfrow=c(1, 1))
-ts.plot(c_train.bc.1, main="De-seasonlized Time Series",
+ts.plot(c_train.bc.1, main="De-trended Time Series",
 ylab=expression(nabla[1]~Y[t]))
 abline(h=mean(c_train.bc.1), lty=2)
 ```
@@ -271,6 +271,8 @@ arima(c_train.bc, order = c(2,1,2),fixed=c(NA,0,NA,0), method = "ML")
 ```
 
 $ (1+0.7102B)Y_t = (1 – 0.6048B)Z_t$ 
+
+$ Y_t+0.7102B)Y_t = (1 – 0.6048B)Z_t$
 ```{r}
 AICc(arima(c_train.bc, order=c(2,1,2), method="ML")) 
 ```
