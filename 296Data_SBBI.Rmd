@@ -314,7 +314,7 @@ Box.test(res2^2,lag = 20, type = c("Ljung-Box"),fitdf = 0)
 ar(res1,aic=TRUE,order.max=NULL, mehod = c("yule-walker"))
 ```
 ```{r}
-pred.tr <- predict(fit2, n.ahead = 9)
+pred.tr <- predict(fit2, n.ahead = 12)
 U.tr = (lambda*pred.tr$pred + 1.96*pred.tr$se + 1)^(1/lambda)
 L.tr = (lambda*pred.tr$pred - 1.96*pred.tr$se + 1)^(1/lambda)
 # Forecast on original data
@@ -331,7 +331,7 @@ lines(L.tr, col = "blue", lty = "dashed")
 points((lambda*pred.tr$pred + 1)^(1/lambda),col = "red", pch = 1) 
 
 # Forecast with test dataset
-plot.ts(c_test, xlim = c(2021,2023), ylim = c(0,8))
+plot.ts(c_test, xlim = c(2022,2023), ylim = c(0,8))
 lines(U.tr, col = "blue", lty = "dashed")
 lines(L.tr, col = "blue", lty = "dashed")
 points((lambda*pred.tr$pred + 1)^(1/lambda),col = "red", pch = 1) 
