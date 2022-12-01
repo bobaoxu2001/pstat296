@@ -152,6 +152,10 @@ var(c_train.bc.1.12)
 ```
 ```{r}
 hist(c_train.bc.1, col = "light blue", xlab = "", main = "") 
+# non-gaussian distribution - long tail not perform well
+# box-cox jenkins methodolgies 
+# why other models - because of non-gaussian distribution
+# 
 ```
 
 
@@ -200,6 +204,7 @@ $U_t = (1 – 0.1488B^2)Z_t -0.0145$
 ```{r}
 polyroot(c(1, 0, -0.1448))
 ```
+$(1 - \phi_1 B - \phi2 B^2) (1 – B) Y_t = Z_t + \theta_1 Z_{t-1}+ \theta_2 Z_{t−2}$
 
 ```{r}
 # Plot the residuals
@@ -220,6 +225,8 @@ qqline(res1, col = "blue")
 par(mfrow=c(1,2)) 
 acf(res1,lag.max=60, main = "") 
 pacf(res1,lag.max=60, main = "")
+# Heavy long tails; Gaussian distribution didn't exist
+# Simple mod
 ```
 ```{r}
 # Perform test on Model 1's residual
@@ -293,7 +300,7 @@ plot.ts(res2, xlab = "")
 abline(h=mean(res2),col = "blue")
 # Plot the histogram, Q-Q normal plot of the residual par(mfrow=c(1,2))
 hist(res2, density = 20, breaks = 20,
-col2 = "blue", xlab = "", prob = TRUE, main = "") 
+fit2 = "blue", xlab = "", prob = TRUE, main = "") 
 m2 <- mean(res2)
 std2 <- sqrt(var(res2)) 
 curve(dnorm(x,m2,std2),add = TRUE)
@@ -317,6 +324,12 @@ ar(res1,aic=TRUE,order.max=NULL, mehod = c("yule-walker"))
 pred.tr <- predict(fit2, n.ahead = 12)
 U.tr = (lambda*pred.tr$pred + 1.96*pred.tr$se + 1)^(1/lambda)
 L.tr = (lambda*pred.tr$pred - 1.96*pred.tr$se + 1)^(1/lambda)
+
+plot.ts(c_train, xlim = c(2000,2023), ylim = c(0,8)) 
+lines(U.tr, col = "blue", lty = "dashed")
+lines(L.tr, col = "blue", lty = "dashed")
+points((lambda*pred.tr$pred + 1)^(1/lambda),col = "red", pch = 1) 
+
 # Forecast on original data
 plot.ts(c_train, xlim = c(2015,2023), ylim = c(0,8)) 
 lines(U.tr, col = "blue", lty = "dashed")
